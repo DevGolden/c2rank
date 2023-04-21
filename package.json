@@ -1,0 +1,17 @@
+{
+  "name": "topstaking",
+  "version": "1.0.0",
+  "description": "A tool for checking the top stakers from C2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "alchemy-sdk": "^2.8.0",
+    "ethers": "^5.4",
+    "express": "^4.18.2",
+    "web3": "^1.9.0"
+  }
+}
