@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const ethers = require("ethers");
+const NodeCache = require( "node-cache" ); 
+const cache = new NodeCache({ checkperiod: 86400 });
+const cacheKey = 'resultado';
 
 const app = express();
 
@@ -23,7 +26,7 @@ async function getData() {
 
     // calling the "getStakers" function to read the stored value
     let getStakers = await contract.getStakers();
-    //getStakers = getStakers.slice(0, 30); // TEST
+    // getStakers = getStakers.slice(0, 30); // TEST
 
     // Get aux array of LOKA staked
     var arrayStakingC2 = [];
@@ -49,13 +52,30 @@ app.use(cors());
 
 // Define a route that returns some data
 app.get('/data', async function(req, res) {
+  const cachedResult = cache.get(cacheKey);
+  console.log(cachedResult);
+
+  if (cachedResult) {
+    // Si el resultado se encuentra en la caché, devolverlo
+    console.log();
+    downloadData();
+    return res.json({ array1:cachedResult[0], array2:cachedResult[1], datetime:cachedResult[2] });
+  }
+  console.log("No esta en cache");
+
   try {
     // Call your async function and get the 2 arrays
     const [array1, array2] = await getData();
+    var today = new Date();
+    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    var dateTime = date+' '+time;
     //console.log(array1);
+    cache.set(cacheKey, [array1, array2, dateTime]);
+    console.log("Calculado y guardado en cache");
 
     // Send the arrays as JSON data
-    res.json({ array1, array2 });
+    res.json({ array1, array2, datetime:dateTime});
   } catch (error) {
     console.error(error);
     res.status(500).send('Error calculating values');
@@ -67,3 +87,19 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+const downloadData = () => {
+  let times = 0;
+  return new Promise(async (resolveMain) => {
+    // Call your async function and get the 2 arrays
+    const [array1, array2] = await getData();
+    var today = new Date();
+    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    var dateTime = date+' '+time;
+    //console.log(array1);
+    cache.set(cacheKey, [array1, array2, dateTime]);
+    console.log("Calculado y guardado en cache");
+  });
+}
