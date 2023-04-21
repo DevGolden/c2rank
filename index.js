@@ -31,19 +31,21 @@ async function getData() {
     // Get aux array of LOKA staked
     var arrayStakingC2 = [];
     for (let i = 0; i < getStakers.length; i++) {
-        arrayStakingC2.push(parseFloat(ethers.utils.formatEther(await contract.stakeOf(getStakers[i], 2))));
+      lokaStaked = parseFloat(ethers.utils.formatEther(await contract.stakeOf(getStakers[i], 2)));
+      if (lokaStaked == 0) {
+        getStakers.splice(i, 1);
+        i--;
+        continue;
+      }
+      arrayStakingC2.push(lokaStaked);
     }
 
-    // Filter and sort the arrays -> descending order and not zero-values
-    const filtered = getStakers.reduce((acc, string, index) => {
-        if (arrayStakingC2[index] !== 0) {
-            acc.push({ string, number: arrayStakingC2[index] });
-        }
-        return acc;
-    }, []);
-    filtered.sort((a, b) => b.number - a.number);
-    const sortedStakers = filtered.map(({ string }) => string);
-    const sortedValues = filtered.map(({ number }) => number);
+    const combined = getStakers.map((string, index) => ({ string, number: arrayStakingC2[index] }));
+    combined.sort((a, b) => b.number - a.number);
+    const sortedStakers = combined.map(({ string }) => string);
+    const sortedValues = combined.map(({ number }) => number);
+    //console.log(sortedStakers);
+    //console.log(sortedValues);
     return [sortedStakers, sortedValues];
 }
 
@@ -53,31 +55,31 @@ app.use(cors());
 // Define a route that returns some data
 app.get('/data', async function(req, res) {
   const cachedResult = cache.get(cacheKey);
-  console.log(cachedResult);
+  //console.log(cachedResult);
 
-  if (cachedResult) {
+  if (cachedResult && req.query.force == 0) {
     // Si el resultado se encuentra en la caché, devolverlo
-    console.log();
     downloadData();
     return res.json({ array1:cachedResult[0], array2:cachedResult[1], datetime:cachedResult[2] });
   }
-  console.log("No esta en cache");
+  //console.log("No esta en cache");
 
   try {
     // Call your async function and get the 2 arrays
     const [array1, array2] = await getData();
-    var today = new Date();
-    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    var dateTime = date+' '+time;
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10).replace(/-/g, '/');
+    const time = now.toTimeString().slice(0, 8).padStart(8, '0');
+    const dateTime = `${date} ${time}`;
     //console.log(array1);
+    // Guarda en cache
     cache.set(cacheKey, [array1, array2, dateTime]);
-    console.log("Calculado y guardado en cache");
+    //console.log("Calculado y guardado en cache");
 
     // Send the arrays as JSON data
     res.json({ array1, array2, datetime:dateTime});
   } catch (error) {
-    console.error(error);
+    //console.error(error);
     res.status(500).send('Error calculating values');
   }
 });
@@ -85,7 +87,7 @@ app.get('/data', async function(req, res) {
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  //console.log(`Server running on port ${PORT}`);
 });
 
 
@@ -94,12 +96,12 @@ const downloadData = () => {
   return new Promise(async (resolveMain) => {
     // Call your async function and get the 2 arrays
     const [array1, array2] = await getData();
-    var today = new Date();
-    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    var dateTime = date+' '+time;
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10).replace(/-/g, '/');
+    const time = now.toTimeString().slice(0, 8).padStart(8, '0');
+    const dateTime = `${date} ${time}`;
     //console.log(array1);
     cache.set(cacheKey, [array1, array2, dateTime]);
-    console.log("Calculado y guardado en cache");
+    //console.log("Calculado y guardado en cache");
   });
 }
