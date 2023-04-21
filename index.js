@@ -23,7 +23,7 @@ async function getData() {
 
     // calling the "getStakers" function to read the stored value
     let getStakers = await contract.getStakers();
-    //getStakers = getStakers.slice(0, 30); // TEST
+    getStakers = getStakers.slice(0, 30); // TEST
 
     // Get aux array of LOKA staked
     var arrayStakingC2 = [];
