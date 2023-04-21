@@ -4,6 +4,7 @@ const ethers = require("ethers");
 const NodeCache = require( "node-cache" ); 
 const cache = new NodeCache({ checkperiod: 86400 });
 const cacheKey = 'resultado';
+var CronJob = require('cron').CronJob;
 
 const app = express();
 
@@ -26,7 +27,7 @@ async function getData() {
 
     // calling the "getStakers" function to read the stored value
     let getStakers = await contract.getStakers();
-    getStakers = getStakers.slice(0, 50); // TEST
+    //getStakers = getStakers.slice(0, 50); // TEST
 
     // Get aux array of LOKA staked
     var arrayStakingC2 = [];
@@ -84,6 +85,14 @@ app.get('/data', async function(req, res) {
   }
 });
 
+// Patrón de cron
+// Corre todos los lunes a la 1:00 PM
+new CronJob('0 23 * * *', function() {
+  // Código a ejecutar
+}, function() {
+  downloadData();
+}, true);
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -105,3 +114,4 @@ const downloadData = () => {
     //console.log("Calculado y guardado en cache");
   });
 }
+
